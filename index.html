@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Concrete Mix Optimizer</title>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --bg-color: #f8f9fa;
+            --panel-bg: #ffffff;
+            --text-color: #333333;
+            --border-color: #e0e0e0;
+            --highlight-color: #f5f5f5;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        h1, h2, h3, h4 {
+            color: var(--text-color);
+            margin-top: 0;
+        }
+        .header h1 {
+            margin-bottom: 0.5rem;
+        }
+        .note {
+            color: #666;
+            font-style: italic;
+            margin-top: 5px;
+            text-align: left;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        .panel {
+            background-color: var(--panel-bg);
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .column {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+        .section {
+            margin-bottom: 1.5rem;
+        }
+        .section-title {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+        .section-icon {
+            margin-right: 0.5rem;
+            color: var(--primary-color);
+            font-size: 1.2rem;
+        }
+        .form-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            align-items: flex-end;
+        }
+        .form-group {
+            flex: 1;
+            margin-bottom: 1rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 0.9rem;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        .constraint-list {
+            margin-top: 1rem;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0.5rem;
+        }
+        .empty-constraint-list {
+            color: #95a5a6;
+            font-style: italic;
+            text-align: center;
+            padding: 1rem;
+        }
+        .constraint-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 10px;
+            margin-bottom: 5px;
+            background-color: var(--highlight-color);
+            border-radius: 4px;
+        }
+        .constraint-item:last-child {
+            margin-bottom: 0;
+        }
+        .remove-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        .remove-btn:hover {
+            background-color: #c0392b;
+        }
+        .optimize-btn-container {
+            position: fixed;
+            bottom: 20px;
+            left: 0;
+            right: 0; 
+            width: 100%;
+            background-color: transparent;
+            padding: 1rem 0;
+            margin-top: 1rem;
+            z-index: 1000;
+            text-align: center;
+            pointer-events: none; /* This allows clicks to pass through the container */
+        }
+        .optimize-btn {
+            background-color: var(--secondary-color);
+            font-size: 1.1rem;
+            font-weight: 600;
+            padding: 12px 35px;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+            border-radius: 8px;
+            transition: all 0.2s;
+            pointer-events: auto; /* This allows the button to receive clicks */
+            max-width: 300px;
+            margin: 0 auto;
+        }
+        .optimize-btn:hover {
+            background-color: #27ae60;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 12px rgba(0,0,0,0.2);
+        }
+        .loading {
+            display: none;
+            margin: 1rem 0;
+        }
+        .loading-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 0.5rem;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .error {
+            color: #e74c3c;
+            margin-top: 1rem;
+            padding: 0.5rem;
+            background-color: #fadbd8;
+            border-radius: 4px;
+            display: none;
+        }
+        .results-panel {
+            position: sticky;
+            top: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        th {
+            background-color: var(--highlight-color);
+            font-weight: 500;
+        }
+        .material-selector {
+            position: relative;
+        }
+        .tip {
+            font-size: 0.8rem;
+            color: #7f8c8d;
+            margin-top: 0.25rem;
+        }
+        .help-icon {
+            margin-left: 5px;
+            color: var(--primary-color);
+            cursor: help;
+            position: relative;
+            display: inline-block;
+        }
+        .tooltip {
+            visibility: hidden;
+            width: 200px;
+            background-color: #34495e;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-weight: normal;
+            font-size: 0.8rem;
+        }
+        .help-icon:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .tab {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab.active {
+            border-bottom: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .value-unit {
+            display: flex;
+            align-items: center;
+        }
+        .unit {
+            margin-left: 5px;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+        /* Responsive layout */
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            .form-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .form-group {
+                margin-bottom: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Concrete Mix Optimizer</h1>
+        <p class="note">All numbers are per liter of concrete</p>
+    </div>
+    
+    <div class="container">
+        <div class="column">
+            <div class="panel">
+                <div class="section">
+                    <div class="section-title">
+                        <h3>Optimization Settings</h3>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="optimization-target">Target to Optimize</label>
+                            <select id="optimization-target">
+                                <option value="COST">Cost (kr)</option>
+                                <option value="CO2">CO2 Emissions (kg)</option>
+                            </select>
+                            <p class="tip">Select whether to minimize cost or CO2 emissions</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tabs">
+                    <div class="tab active" data-tab="properties">Performance Requirements</div>
+                    <div class="tab" data-tab="materials">Material Constraints</div>
+                </div>
+                
+                <div class="tab-content active" id="properties-tab">
+                    <div class="section">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="output-attribute">Property</label>
+                                <select id="output-attribute">
+                                    <option value="strength">Strength (MPa)</option>
+                                    <option value="density">Density (kg/m³)</option>
+                                    <option value="air">Air Content (%)</option>
+                                    <option value="consistency">Slump (mm)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="output-constraint-type">Constraint Type</label>
+                                <select id="output-constraint-type">
+                                    <option value="min">Minimum (≥)</option>
+                                    <option value="max">Maximum (≤)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="output-value">Value</label>
+                                <input type="number" id="output-value" value="40">
+                            </div>
+                            <button id="add-output-constraint">Add</button>
+                        </div>
+                        
+                        <div class="constraint-list" id="output-constraints">
+                            <!-- Output constraints will be listed here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="materials-tab">
+                    <div class="section">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="input-attribute">Material</label>
+                                <select id="input-attribute">
+                                    <option value="0">U0-22 GJENVUNN 332</option>
+                                    <option value="1">U0-4 BREDING</option>
+                                    <option value="2">U0-4 VASSFJELL</option>
+                                    <option value="3">U0-8 BJØRSET</option>
+                                    <option value="4">U0-8 FORSET</option>
+                                    <option value="5">U0-8 FORSET 2</option>
+                                    <option value="6">U16-22 FORSET</option>
+                                    <option value="7">U16-22 MERAFSTAD</option>
+                                    <option value="8">U8-16 FORSET</option>
+                                    <option value="9">U8-16 MEREFSTAD</option>
+                                    <option value="10">U8-16 MEREFSTAD II</option>
+                                    <option value="11">UAMEX 11 1:19</option>
+                                    <option value="12">UAMEX 11 1:9</option>
+                                    <option value="13">UANL FA</option>
+                                    <option value="14">UBYFERROX 130 RØD</option>
+                                    <option value="15">UBYFERROX 960 GUL</option>
+                                    <option value="16">UBYFERROX330C SORT</option>
+                                    <option value="17">UDELVOCRETE STAB</option>
+                                    <option value="18">UDRAMIX 4D 65/60BG</option>
+                                    <option value="19">UDRAMIX 4D65/35-BG</option>
+                                    <option value="20">UDRAMIX READY</option>
+                                    <option value="21">UDRAMIX RL45/50-BN</option>
+                                    <option value="22">UFA NORCEM</option>
+                                    <option value="23">UFA NORCEM K=0</option>
+                                    <option value="24">UFA NORCEM K=0.4</option>
+                                    <option value="25">UFA NORCEM K=0.7</option>
+                                    <option value="26">UFA NORCEM K=1.0</option>
+                                    <option value="27">UFLYVEASKEB4</option>
+                                    <option value="28">UGJENBRUKSVANN</option>
+                                    <option value="29">UGJENBRUKSVANN 332</option>
+                                    <option value="30">UK-VANN</option>
+                                    <option value="31">UMASTER CORE 3015</option>
+                                    <option value="32">UMASTER EASE 1020</option>
+                                    <option value="33">UMASTER EASE 2050</option>
+                                    <option value="34">UMASTERLIFE SRA848</option>
+                                    <option value="35">UMASTERLIFE SRA900</option>
+                                    <option value="36">UMASTERMATRIX SCC</option>
+                                    <option value="37">UMASTERMATRIXFC500</option>
+                                    <option value="38">UMEYCO FIB PP 6M</option>
+                                    <option value="39">UMEYCO TCC 735</option>
+                                    <option value="40">UMINIBARS BASALT</option>
+                                    <option value="41">UNATRIUMNITRAT</option>
+                                    <option value="42">UPOZZOLITH R 433</option>
+                                    <option value="43">URESCON T</option>
+                                    <option value="44">USA</option>
+                                    <option value="45">USCHWENK CEM 111/B</option>
+                                    <option value="46">USILIKA 0</option>
+                                    <option value="47">USILIKA 1</option>
+                                    <option value="48">USILIKA 2</option>
+                                    <option value="49">USILIKA ELKEM</option>
+                                    <option value="50">USTD-FA KJØPSVIK</option>
+                                    <option value="51">UTESTSAND 0-8</option>
+                                    <option value="52">UV-VANN</option>
+                                    <option value="53">UX-SEED</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="input-constraint-type">Constraint Type</label>
+                                <select id="input-constraint-type">
+                                    <option value="min">Minimum (≥)</option>
+                                    <option value="max">Maximum (≤)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="input-value">Value</label>
+                                <input type="number" id="input-value" value="200">
+                            </div>
+                            <button id="add-input-constraint">Add</button>
+                        </div>
+                        
+                        <div class="constraint-list" id="input-constraints">
+                            <!-- Input constraints will be listed here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <div class="section-title">
+                        <h3>Advanced Settings</h3>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="samples">Number of Samples</label>
+                            <input type="number" id="samples" value="15" min="1">
+                            <p class="tip">Higher values improve results but take longer</p>
+                        </div>
+                        <div class="form-group">
+                            <label for="iterations">Iterations per Sample</label>
+                            <input type="number" id="iterations" value="1500" min="1">
+                            <p class="tip">Higher values improve results but take longer</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="loading" class="loading">
+                    <div class="loading-content">
+                        <div class="loading-spinner"></div>
+                        <p>Optimizing mix... This may take a minute.</p>
+                    </div>
+                </div>
+                
+                <div id="error" class="error"></div>
+            </div>
+            
+            <div class="optimize-btn-container">
+                <button id="optimize-btn" class="optimize-btn">Run Optimization</button>
+            </div>
+        </div>
+        
+        <div class="column">
+            <div class="panel results-panel">
+                <div class="section">
+                    <div class="section-title">
+                        <h3>Optimization Results</h3>
+                    </div>
+                    
+                    <div class="tabs">
+                        <div class="tab active" data-tab="summary">Summary</div>
+                        <div class="tab" data-tab="ingredients">Ingredients</div>
+                        <div class="tab" data-tab="performance">Performance</div>
+                    </div>
+                    
+                    <div class="tab-content active" id="summary-tab">
+                        <table id="summary-table">
+                            <thead>
+                                <tr>
+                                    <th>Metric</th>
+                                    <th>Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Total Cost</td>
+                                    <td><span id="total-cost">-</span> kr/L</td>
+                                </tr>
+                                <tr>
+                                    <td>CO2 Emissions</td>
+                                    <td><span id="co2-emissions">-</span> kg/L</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="tab-content" id="ingredients-tab">
+                        <table id="ingredients-table">
+                            <thead>
+                                <tr>
+                                    <th>Material</th>
+                                    <th>Amount (g/L)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ingredients-body">
+                                <!-- Ingredients will be listed here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="tab-content" id="performance-tab">
+                        <table id="properties-table">
+                            <thead>
+                                <tr>
+                                    <th>Property</th>
+                                    <th>Value</th>
+                                </tr>
+                            </thead>
+                            <tbody id="properties-body">
+                                <!-- Properties will be listed here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Store constraints
+        const outputConstraints = [
+            { attribute: "strength", type: "min", value: 40 },
+            { attribute: "air", type: "max", value: 5 }
+        ];
+        const inputConstraints = [
+            { 
+                attribute_index: 50, 
+                attribute_name: "USTD-FA KJØPSVIK", 
+                type: "min", 
+                value: 200 
+            }
+        ];
+        
+        // Setup tabbed interface
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Find the parent tabs container
+                const tabsContainer = tab.closest('.tabs');
+                
+                // Remove active class from all tabs in this container
+                tabsContainer.querySelectorAll('.tab').forEach(t => {
+                    t.classList.remove('active');
+                });
+                
+                // Add active class to clicked tab
+                tab.classList.add('active');
+                
+                // Get the tab ID from the data-tab attribute
+                const tabId = tab.getAttribute('data-tab');
+                
+                // Find the parent section that contains both tabs and content
+                const parentSection = tabsContainer.closest('.section');
+                
+                // Find tab contents within the same section
+                let tabContentContainer;
+                if (parentSection) {
+                    // If within a section, search only in that section
+                    tabContentContainer = parentSection;
+                } else {
+                    // Otherwise search in the next siblings until we find tab content
+                    tabContentContainer = tabsContainer.parentElement;
+                }
+                
+                // Find all related tab content elements within this container
+                const relatedTabContents = tabContentContainer.querySelectorAll('.tab-content');
+                
+                // Hide all tab contents first
+                relatedTabContents.forEach(content => {
+                    content.classList.remove('active');
+                });
+                
+                // Show the selected tab content in this container
+                tabContentContainer.querySelector(`#${tabId}-tab`).classList.add('active');
+            });
+        });
+        
+        // DOM Elements
+        const addOutputConstraintBtn = document.getElementById('add-output-constraint');
+        const addInputConstraintBtn = document.getElementById('add-input-constraint');
+        const optimizeBtn = document.getElementById('optimize-btn');
+        const outputConstraintsList = document.getElementById('output-constraints');
+        const inputConstraintsList = document.getElementById('input-constraints');
+        const ingredientsBody = document.getElementById('ingredients-body');
+        const propertiesBody = document.getElementById('properties-body');
+        const loadingElement = document.getElementById('loading');
+        const errorElement = document.getElementById('error');
+        
+        // Ensure all existing constraints have material names
+        inputConstraints.forEach(constraint => {
+            if (!constraint.attribute_name) {
+                // Find material name from dropdown if missing
+                const materialSelect = document.getElementById('input-attribute');
+                for (let i = 0; i < materialSelect.options.length; i++) {
+                    if (parseInt(materialSelect.options[i].value) === constraint.attribute_index) {
+                        constraint.attribute_name = materialSelect.options[i].text;
+                        break;
+                    }
+                }
+            }
+        });
+        
+        // Initialize constraint lists
+        updateOutputConstraintsList();
+        updateInputConstraintsList();
+        
+        // Add output constraint
+        addOutputConstraintBtn.addEventListener('click', () => {
+            const attribute = document.getElementById('output-attribute').value;
+            const type = document.getElementById('output-constraint-type').value;
+            const value = parseFloat(document.getElementById('output-value').value);
+            
+            if (isNaN(value)) {
+                alert('Please enter a valid number for the value');
+                return;
+            }
+            
+            const constraint = { attribute, type, value };
+            outputConstraints.push(constraint);
+            updateOutputConstraintsList();
+        });
+        
+        // Add input constraint
+        addInputConstraintBtn.addEventListener('click', () => {
+            const attributeSelect = document.getElementById('input-attribute');
+            const attributeIndex = parseInt(attributeSelect.value);
+            const attributeName = attributeSelect.options[attributeSelect.selectedIndex].text;
+            const type = document.getElementById('input-constraint-type').value;
+            const value = parseFloat(document.getElementById('input-value').value);
+            
+            if (isNaN(attributeIndex) || isNaN(value)) {
+                alert('Please enter valid numbers');
+                return;
+            }
+            
+            const constraint = { 
+                attribute_index: attributeIndex, 
+                attribute_name: attributeName,
+                type, 
+                value 
+            };
+            inputConstraints.push(constraint);
+            updateInputConstraintsList();
+        });
+        
+        // Update output constraints list
+        function updateOutputConstraintsList() {
+            outputConstraintsList.innerHTML = '';
+            
+            if (outputConstraints.length === 0) {
+                outputConstraintsList.innerHTML = '<div class="empty-constraint-list">No performance requirements added</div>';
+                return;
+            }
+            
+            outputConstraints.forEach((constraint, index) => {
+                const item = document.createElement('div');
+                item.className = 'constraint-item';
+                
+                // Map attribute to user-friendly name
+                let attributeName = constraint.attribute;
+                let unit = '';
+                switch(constraint.attribute) {
+                    case 'strength': 
+                        attributeName = 'Strength';
+                        unit = 'MPa';
+                        break;
+                    case 'density': 
+                        attributeName = 'Density';
+                        unit = 'kg/m³';
+                        break;
+                    case 'air': 
+                        attributeName = 'Air Content';
+                        unit = '%';
+                        break;
+                    case 'consistency': 
+                        attributeName = 'Slump';
+                        unit = 'mm';
+                        break;
+                }
+                
+                item.innerHTML = `
+                    <span>${attributeName} ${constraint.type === 'min' ? '≥' : '≤'} ${constraint.value} ${unit}</span>
+                    <button class="remove-btn" data-index="${index}" data-type="output">Remove</button>
+                `;
+                outputConstraintsList.appendChild(item);
+            });
+            
+            // Add event listeners to remove buttons
+            document.querySelectorAll('[data-type="output"]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const index = parseInt(e.target.getAttribute('data-index'));
+                    outputConstraints.splice(index, 1);
+                    updateOutputConstraintsList();
+                });
+            });
+        }
+        
+        // Update input constraints list
+        function updateInputConstraintsList() {
+            inputConstraintsList.innerHTML = '';
+            
+            if (inputConstraints.length === 0) {
+                inputConstraintsList.innerHTML = '<div class="empty-constraint-list">No material constraints added</div>';
+                return;
+            }
+            
+            inputConstraints.forEach((constraint, index) => {
+                const item = document.createElement('div');
+                item.className = 'constraint-item';
+                
+                // Use the attribute name if available, otherwise use the index
+                const materialName = constraint.attribute_name || `Material ${constraint.attribute_index}`;
+                
+                item.innerHTML = `
+                    <span>${materialName} ${constraint.type === 'min' ? '≥' : '≤'} ${constraint.value} g/L</span>
+                    <button class="remove-btn" data-index="${index}" data-type="input">Remove</button>
+                `;
+                inputConstraintsList.appendChild(item);
+            });
+            
+            // Add event listeners to remove buttons
+            document.querySelectorAll('[data-type="input"]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const index = parseInt(e.target.getAttribute('data-index'));
+                    inputConstraints.splice(index, 1);
+                    updateInputConstraintsList();
+                });
+            });
+        }
+        
+        // Optimize mix
+        optimizeBtn.addEventListener('click', async () => {
+            const samples = parseInt(document.getElementById('samples').value);
+            const iterations = parseInt(document.getElementById('iterations').value);
+            const optimizationTarget = document.getElementById('optimization-target').value;
+            
+            if (isNaN(samples) || isNaN(iterations)) {
+                alert('Please enter valid numbers for samples and iterations');
+                return;
+            }
+            
+            // Prepare request data - strip out attribute_name which is just for display
+            const requestInputConstraints = inputConstraints.map(({attribute_index, type, value}) => ({
+                attribute_index, type, value
+            }));
+            
+            const requestData = {
+                samples,
+                iterations,
+                optimization_target: optimizationTarget,
+                input_constraints: requestInputConstraints,
+                output_constraints: outputConstraints
+            };
+            
+            // Show loading
+            loadingElement.style.display = 'block';
+            errorElement.style.display = 'none';
+            errorElement.textContent = '';
+            optimizeBtn.disabled = true;
+            
+            try {
+                // Make API call
+                const response = await fetch('/optimize', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.error || 'Optimization failed');
+                }
+                
+                // Display results
+                displayResults(data);
+                
+                // Switch to the results tab
+                document.querySelector('.tab[data-tab="summary"]').click();
+            } catch (error) {
+                errorElement.textContent = `Error: ${error.message}`;
+                errorElement.style.display = 'block';
+                console.error('Error optimizing mix:', error);
+                
+                // Try to display more detailed error information if available
+                if (error.response && error.response.json) {
+                    const errorData = await error.response.json();
+                    if (errorData.traceback) {
+                        console.error('Detailed error:', errorData.traceback);
+                    }
+                }
+            } finally {
+                // Hide loading
+                loadingElement.style.display = 'none';
+                optimizeBtn.disabled = false;
+            }
+        });
+        
+        // Display results
+        function displayResults(data) {
+            // Clear previous results
+            ingredientsBody.innerHTML = '';
+            propertiesBody.innerHTML = '';
+            
+            // Display summary data
+            document.getElementById('total-cost').textContent = data.cost.toFixed(2);
+            document.getElementById('co2-emissions').textContent = data.co2_emissions.toFixed(2);
+            
+            // Display ingredients
+            for (const [ingredient, value] of Object.entries(data.ingredients)) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${ingredient}</td>
+                    <td>${value.toFixed(2)}</td>
+                `;
+                ingredientsBody.appendChild(row);
+            }
+            
+            // Display predicted properties
+            const propertyUnits = {
+                "Målt konsistens [mm]": "mm",
+                "Målt densitet [kg/m3]": "kg/m³",
+                "Målt luftinnhold [%]": "%",
+                "Sylinder 28 døgn": "MPa"
+            };
+            
+            // Display property with user-friendly names
+            const propertyNames = {
+                "Målt konsistens [mm]": "Slump",
+                "Målt densitet [kg/m3]": "Density",
+                "Målt luftinnhold [%]": "Air Content",
+                "Sylinder 28 døgn": "Compressive Strength (28 days)"
+            };
+            
+            for (const [property, value] of Object.entries(data.predicted_results)) {
+                const row = document.createElement('tr');
+                const propertyName = propertyNames[property] || property;
+                const unit = propertyUnits[property] || "";
+                
+                row.innerHTML = `
+                    <td>${propertyName}</td>
+                    <td>${value.toFixed(2)} ${unit}</td>
+                `;
+                propertiesBody.appendChild(row);
+            }
+        }
+    </script>
+</body>
+</html> 
