@@ -85,4 +85,32 @@ def health_check():
     return jsonify({'status': 'ok'})
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=3000) 
+    # Production settings
+    app.config['ENV'] = 'production'
+    app.config['DEBUG'] = False
+    app.config['TESTING'] = False
+    
+    # Use Gunicorn for production
+    from gunicorn.app.base import BaseApplication
+    
+    class StandaloneApplication(BaseApplication):
+        def __init__(self, app, options=None):
+            self.options = options or {}
+            self.application = app
+            super().__init__()
+        
+        def load_config(self):
+            for key, value in self.options.items():
+                self.cfg.set(key, value)
+        
+        def load(self):
+            return self.application
+    
+    options = {
+        'bind': '0.0.0.0:3000',
+        'workers': 4,
+        'timeout': 120,
+        'worker_class': 'sync'
+    }
+    
+    StandaloneApplication(app, options).run() 
