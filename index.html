@@ -37,7 +37,7 @@
             color: #666;
             font-style: italic;
             margin-top: 5px;
-            text-align: left;
+            /* text-align: left; */
         }
         .container {
             display: grid;
@@ -318,8 +318,8 @@
 </head>
 <body>
     <div class="header">
-        <h1>Concrete Mix Optimizer</h1>
-        <p class="note">All numbers are per liter of concrete</p>
+        <h1>Cemsaver MVP v0.1</h1>
+        <p class="note">Concrete mix optimization tool</p>
     </div>
     
     <div class="container">
@@ -467,7 +467,7 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="samples">Number of Samples</label>
-                            <input type="number" id="samples" value="15" min="1">
+                            <input type="number" id="samples" value="10" min="1">
                             <p class="tip">Higher values improve results but take longer</p>
                         </div>
                         <div class="form-group">
@@ -517,11 +517,11 @@
                             <tbody>
                                 <tr>
                                     <td>Total Cost</td>
-                                    <td><span id="total-cost">-</span> kr/L</td>
+                                    <td><span id="total-cost">-</span> kr/m³</td>
                                 </tr>
                                 <tr>
                                     <td>CO2 Emissions</td>
-                                    <td><span id="co2-emissions">-</span> kg/L</td>
+                                    <td><span id="co2-emissions">-</span> kg/m³</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -573,6 +573,8 @@
                 value: 200 
             }
         ];
+
+        const DELTA = 0.01;
         
         // Setup tabbed interface
         document.querySelectorAll('.tab').forEach(tab => {
@@ -847,17 +849,19 @@
             propertiesBody.innerHTML = '';
             
             // Display summary data
-            document.getElementById('total-cost').textContent = data.cost.toFixed(2);
-            document.getElementById('co2-emissions').textContent = data.co2_emissions.toFixed(2);
+            document.getElementById('total-cost').textContent = (data.cost / 1000).toFixed(2);
+            document.getElementById('co2-emissions').textContent = (data.co2_emissions / 1000).toFixed(2);
             
             // Display ingredients
             for (const [ingredient, value] of Object.entries(data.ingredients)) {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${ingredient}</td>
+                if (value >= DELTA) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${ingredient}</td>
                     <td>${value.toFixed(2)}</td>
-                `;
-                ingredientsBody.appendChild(row);
+                    `;
+                    ingredientsBody.appendChild(row);
+                }
             }
             
             // Display predicted properties
