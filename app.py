@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, render_template, send_from_directory
 import torch
 import pandas as pd
 import os
+import argparse
 from mixer import optmizie, denormalizeInputs, denormalizeOutputs, model, test_df, y_cols, materials_cost, CO2_emissions
 
 app = Flask(__name__)
@@ -9,6 +10,10 @@ app = Flask(__name__)
 @app.route('/', methods=['GET'])
 def index():
     return send_from_directory('.', 'index.html')
+
+# @app.route('/data/<path:filename>')
+# def serve_data(filename):
+#     return send_from_directory('data', filename)
 
 @app.route('/optimize', methods=['POST'])
 def optimize():
@@ -85,32 +90,45 @@ def health_check():
     return jsonify({'status': 'ok'})
 
 if __name__ == '__main__':
-    # Production settings
-    app.config['ENV'] = 'production'
-    app.config['DEBUG'] = False
-    app.config['TESTING'] = False
-    
-    # Use Gunicorn for production
-    from gunicorn.app.base import BaseApplication
-    
-    class StandaloneApplication(BaseApplication):
-        def __init__(self, app, options=None):
-            self.options = options or {}
-            self.application = app
-            super().__init__()
+    parser = argparse.ArgumentParser(description='Run the concrete mixer application')
+    parser.add_argument('--dev', action='store_true', help='Run in development mode')
+    args = parser.parse_args()
+
+    if args.dev:
+        # Development settings
+        app.config['ENV'] = 'development'
+        app.config['DEBUG'] = True
+        app.config['TESTING'] = True
+        print("Running in development mode...")
+        app.run(host='0.0.0.0', port=3000)
+    else:
+        # Production settings
+        app.config['ENV'] = 'production'
+        app.config['DEBUG'] = False
+        app.config['TESTING'] = False
         
-        def load_config(self):
-            for key, value in self.options.items():
-                self.cfg.set(key, value)
+        # Use Gunicorn for production
+        from gunicorn.app.base import BaseApplication
         
-        def load(self):
-            return self.application
-    
-    options = {
-        'bind': '0.0.0.0:3000',
-        'workers': 4,
-        'timeout': 120,
-        'worker_class': 'sync'
-    }
-    
-    StandaloneApplication(app, options).run() 
+        class StandaloneApplication(BaseApplication):
+            def __init__(self, app, options=None):
+                self.options = options or {}
+                self.application = app
+                super().__init__()
+            
+            def load_config(self):
+                for key, value in self.options.items():
+                    self.cfg.set(key, value)
+            
+            def load(self):
+                return self.application
+        
+        options = {
+            'bind': '0.0.0.0:3000',
+            'workers': 4,
+            'timeout': 120,
+            'worker_class': 'sync'
+        }
+        
+        print("Running in production mode with Gunicorn...")
+        StandaloneApplication(app, options).run() 
