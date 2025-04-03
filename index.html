@@ -414,7 +414,7 @@
                                     <option value="27">FLYGEASKE</option>
                                     <option value="28">GJENBRUKSVANN</option>
                                     <option value="29">GJENBRUKSVANN 332</option>
-                                    <option value="30">VANN</option>
+                                    <option value="30">Kaldt VANN</option>
                                     <option value="31">SP</option>
                                     <option value="32">SP</option>
                                     <option value="33">SP</option>
@@ -436,7 +436,7 @@
                                     <option value="49">SILIKA E</option>
                                     <option value="50">STD-FA KJØPSVIK</option>
                                     <option value="51">0-8mm TILSLAG</option>
-                                    <option value="52">VANN</option>
+                                    <option value="52">Varmt VANN</option>
                                     <option value="53">AKSELERATOR</option>
                                 </select>
                             </div>
@@ -579,39 +579,39 @@
         // load material_aliases.csv and create a map of aliases
         const materialAliases = {
             "0-22mm TILSLAG GJENBRUK": "U0-22 GJENVUNN 332",
-            "0-4mm TILSLAG": "U0-4 BREDING",
-            "0-8mm TILSLAG": "U0-8 BJØRSET",
-            "16-22mm TILSLAG": "U16-22 FORSET",
-            "8-16MM TILSLAG": "U8-16 FORSET",
-            "LUFTINNFØRENDE": "UAMEX 11 1:19",
+            "0-4mm TILSLAG": ["U0-4 BREDING", "U0-4 VASSFJELL"],
+            "0-8mm TILSLAG": ["U0-8 BJØRSET", "U0-8 FORSET", "U0-8 FORSET 2", "UTESTSAND 0-8"],
+            "16-22mm TILSLAG": ["U16-22 FORSET", "U16-22 MERAFSTAD"],
+            "8-16MM TILSLAG": ["U8-16 FORSET", "U8-16 MEREFSTAD", "U8-16 MEREFSTAD II"],
+            "LUFTINNFØRENDE": ["UAMEX 11 1:19", "UAMEX 11 1:9"],
             "ANL FA": "UANL FA",
             "PIGMENT RØD": "UBYFERROX 130 RØD",
             "PIGMENT GUL": "UBYFERROX 960 GUL",
             "PIGMENT SORT": "UBYFERROX330C SORT",
-            "STABILISATOR": "UDELVOCRETE STAB",
-            "FIBER": "UDRAMIX 4D 65/60BG",
-            "FLYGEASKE": "UFA NORCEM",
+            "STABILISATOR": ["UDELVOCRETE STAB", "UMASTERMATRIXFC500"],
+            "FIBER": ["UDRAMIX 4D 65/60BG", "UDRAMIX 4D65/35-BG", "UDRAMIX READY", "UDRAMIX RL45/50-BN"],
+            "FLYGEASKE": ["UFA NORCEM", "UFLYVEASKEB4"],
             "FLYGEASKE K=0": "UFA NORCEM K=0",
             "FLYGEASKE K=0.4": "UFA NORCEM K=0.4",
             "FLYGEASKE K=0.7": "UFA NORCEM K=0.7",
             "FLYGEASKE K=1": "UFA NORCEM K=1.0",
             "GJENBRUKSVANN": "UGJENBRUKSVANN",
             "GJENBRUKSVANN 332": "UGJENBRUKSVANN 332",
-            "VANN": "UK-VANN",
-            "SP": "UMASTER CORE 3015",
-            "ANTI-SVINN": "UMASTERLIFE SRA848",
+            "Kaldt Vann": "UK-VANN",
+            "SP": ["UMASTER CORE 3015", "UMASTER EASE 1020", "UMASTER EASE 2050"],
+            "ANTI-SVINN": ["UMASTERLIFE SRA848", "UMASTERLIFE SRA900", "UMEYCO TCC 735"],
             "STABILISATOR SCC": "UMASTERMATRIX SCC",
             "FIBER SPRØYTEBETONG": "UMEYCO FIB PP 6M",
-            "ANTI -SVINN": "UMEYCO TCC 735",
             "KOMPOSITTFIBER": "UMINIBARS BASALT",
             "ANTIFREEZE": "UNATRIUMNITRAT",
             "RETARDER": "UPOZZOLITH R 433",
             "ANTI UTVASKING": "URESCON T",
             "SA": "USA",
             "CEM LAVVARME": "USCHWENK CEM 111/B",
-            "SILIKA": "USILIKA 0",
+            "SILIKA": ["USILIKA 0", "USILIKA 1", "USILIKA 2"],
             "SILIKA E": "USILIKA ELKEM",
             "STD-FA KJØPSVIK": "USTD-FA KJØPSVIK",
+            "Varmt Vann": "UV-VANN",
             "AKSELERATOR": "UX-SEED"
         };
         
