@@ -795,10 +795,15 @@
                 // Get the original material name
                 const originalName = constraint.attribute_name || `Material ${constraint.attribute_index}`;
                 
-                // Find the alias for this material
+                // Find the alias for this material MARKER
                 let displayName = originalName;
-                for (const [alias, material] of Object.entries(materialAliases)) {
-                    if (material === originalName) {
+                for (const [alias, materials] of Object.entries(materialAliases)) {
+                    if (Array.isArray(materials)) {
+                        if (materials.includes(originalName)) {
+                            displayName = alias;
+                            break;
+                        }
+                    } else if (materials === originalName) {
                         displayName = alias;
                         break;
                     }
@@ -906,10 +911,15 @@
                 if (value >= DELTA) {
                     const row = document.createElement('tr');
                     
-                    // Find the alias for this material
+                    // Find the alias for this material MARKER
                     let displayName = ingredient;
-                    for (const [alias, material] of Object.entries(materialAliases)) {
-                        if (material === ingredient) {
+                    for (const [alias, materials] of Object.entries(materialAliases)) {
+                        if (Array.isArray(materials)) {
+                            if (materials.includes(ingredient)) {
+                                displayName = alias;
+                                break;
+                            }
+                        } else if (materials === ingredient) {
                             displayName = alias;
                             break;
                         }
